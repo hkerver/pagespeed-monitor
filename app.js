@@ -172,14 +172,31 @@ function generateDemoData(url, strategy) {
     // Mobiel is significant langzamer dan desktop (realistische verschillen)
     const isMobile = strategy === 'mobile';
     
-    // Base scores: mobiel gemiddeld 15-25 punten lager
-    const baseScore = isMobile 
-        ? Math.floor(Math.random() * 30) + 45  // 45-75
-        : Math.floor(Math.random() * 30) + 60; // 60-90
+    // ECHTE verschillen tussen mobiel en desktop
+    // Mobiel: langzamere CPU, slechtere netwerk, kleinere cache
+    // Desktop: snellere CPU, beter netwerk, meer resources
     
-    // Mobiel heeft langzamere metrics
-    const mobileMultiplier = isMobile ? 1.8 : 1.0;
-    const desktopBonus = isMobile ? 0 : 0.3;
+    let baseScore, fcpMs, lcpMs, clsValue, ttiMs, siMs, tbtMs;
+    
+    if (isMobile) {
+        // MOBIEL: Langzamere scores door hardware en netwerk beperkingen
+        baseScore = Math.floor(Math.random() * 25) + 50;  // 50-75
+        fcpMs = (Math.random() * 1.5 + 1.5) * 1000;       // 1.5-3.0s
+        lcpMs = (Math.random() * 2.5 + 2.5) * 1000;       // 2.5-5.0s
+        clsValue = Math.random() * 0.2 + 0.05;            // 0.05-0.25
+        ttiMs = (Math.random() * 5 + 4) * 1000;           // 4-9s
+        siMs = (Math.random() * 3 + 2.5) * 1000;          // 2.5-5.5s
+        tbtMs = Math.random() * 500 + 300;                // 300-800ms
+    } else {
+        // DESKTOP: Snellere scores door betere hardware en netwerk
+        baseScore = Math.floor(Math.random() * 25) + 70;  // 70-95
+        fcpMs = (Math.random() * 0.8 + 0.6) * 1000;       // 0.6-1.4s
+        lcpMs = (Math.random() * 1.2 + 1.0) * 1000;       // 1.0-2.2s
+        clsValue = Math.random() * 0.08 + 0.01;           // 0.01-0.09
+        ttiMs = (Math.random() * 2.5 + 1.5) * 1000;       // 1.5-4.0s
+        siMs = (Math.random() * 1.5 + 1.0) * 1000;        // 1.0-2.5s
+        tbtMs = Math.random() * 200 + 50;                 // 50-250ms
+    }
     
     return {
         url: url,
@@ -188,34 +205,34 @@ function generateDemoData(url, strategy) {
         score: baseScore,
         metrics: {
             fcp: {
-                displayValue: `${((Math.random() * 1.5 + 0.8) * mobileMultiplier).toFixed(1)} s`,
-                score: Math.max(0, Math.min(1, (Math.random() * 0.4 + 0.4) + desktopBonus)),
-                numericValue: ((Math.random() * 1.5 + 0.8) * mobileMultiplier) * 1000
+                displayValue: `${(fcpMs / 1000).toFixed(1)} s`,
+                score: calculateMetricScore('fcp', fcpMs, isMobile),
+                numericValue: fcpMs
             },
             lcp: {
-                displayValue: `${((Math.random() * 2.5 + 1.2) * mobileMultiplier).toFixed(1)} s`,
-                score: Math.max(0, Math.min(1, (Math.random() * 0.4 + 0.3) + desktopBonus)),
-                numericValue: ((Math.random() * 2.5 + 1.2) * mobileMultiplier) * 1000
+                displayValue: `${(lcpMs / 1000).toFixed(1)} s`,
+                score: calculateMetricScore('lcp', lcpMs, isMobile),
+                numericValue: lcpMs
             },
             cls: {
-                displayValue: (Math.random() * 0.25 * (isMobile ? 1.4 : 1)).toFixed(3),
-                score: Math.max(0, Math.min(1, (Math.random() * 0.5 + 0.3) + desktopBonus)),
-                numericValue: Math.random() * 0.25 * (isMobile ? 1.4 : 1)
+                displayValue: clsValue.toFixed(3),
+                score: calculateMetricScore('cls', clsValue, isMobile),
+                numericValue: clsValue
             },
             tti: {
-                displayValue: `${((Math.random() * 4 + 2.5) * mobileMultiplier).toFixed(1)} s`,
-                score: Math.max(0, Math.min(1, (Math.random() * 0.4 + 0.3) + desktopBonus)),
-                numericValue: ((Math.random() * 4 + 2.5) * mobileMultiplier) * 1000
+                displayValue: `${(ttiMs / 1000).toFixed(1)} s`,
+                score: calculateMetricScore('tti', ttiMs, isMobile),
+                numericValue: ttiMs
             },
             si: {
-                displayValue: `${((Math.random() * 3.5 + 1.8) * mobileMultiplier).toFixed(1)} s`,
-                score: Math.max(0, Math.min(1, (Math.random() * 0.4 + 0.3) + desktopBonus)),
-                numericValue: ((Math.random() * 3.5 + 1.8) * mobileMultiplier) * 1000
+                displayValue: `${(siMs / 1000).toFixed(1)} s`,
+                score: calculateMetricScore('si', siMs, isMobile),
+                numericValue: siMs
             },
             tbt: {
-                displayValue: `${Math.floor((Math.random() * 400 + 150) * mobileMultiplier)} ms`,
-                score: Math.max(0, Math.min(1, (Math.random() * 0.4 + 0.3) + desktopBonus)),
-                numericValue: (Math.random() * 400 + 150) * mobileMultiplier
+                displayValue: `${Math.floor(tbtMs)} ms`,
+                score: calculateMetricScore('tbt', tbtMs, isMobile),
+                numericValue: tbtMs
             }
         },
         opportunities: generateOpportunities(isMobile, baseScore),
@@ -223,78 +240,201 @@ function generateDemoData(url, strategy) {
     };
 }
 
+// Bereken metric score op basis van Google's scoring thresholds
+function calculateMetricScore(metric, value, isMobile) {
+    const thresholds = {
+        fcp: {  // First Contentful Paint (ms)
+            good: isMobile ? 1800 : 1000,
+            poor: isMobile ? 3000 : 1800
+        },
+        lcp: {  // Largest Contentful Paint (ms)
+            good: isMobile ? 2500 : 2000,
+            poor: isMobile ? 4000 : 3000
+        },
+        cls: {  // Cumulative Layout Shift (score)
+            good: 0.1,
+            poor: 0.25
+        },
+        tti: {  // Time to Interactive (ms)
+            good: isMobile ? 3800 : 2500,
+            poor: isMobile ? 7300 : 5000
+        },
+        si: {   // Speed Index (ms)
+            good: isMobile ? 3400 : 2000,
+            poor: isMobile ? 5800 : 4000
+        },
+        tbt: {  // Total Blocking Time (ms)
+            good: isMobile ? 200 : 150,
+            poor: isMobile ? 600 : 400
+        }
+    };
+    
+    const t = thresholds[metric];
+    if (!t) return 0.5;
+    
+    if (value <= t.good) {
+        return 0.9 + Math.random() * 0.1;  // 0.9-1.0
+    } else if (value >= t.poor) {
+        return Math.random() * 0.5;  // 0.0-0.5
+    } else {
+        // Lineair interpoleren tussen good en poor
+        const ratio = (value - t.good) / (t.poor - t.good);
+        return 0.9 - (ratio * 0.4);  // 0.5-0.9
+    }
+}
+
 // Genereer realistische opportunities
 function generateOpportunities(isMobile, score) {
-    const opportunities = [
+    const allOpportunities = [
         {
             title: 'Verwijder ongebruikte CSS',
-            description: 'Verminder ongebruikte regels uit stylesheets en stel het laden van CSS-inhoud uit totdat deze nodig is om de laadsnelheid te verbeteren.',
-            savings: Math.floor(Math.random() * 2000 + (isMobile ? 800 : 500)),
-            priority: 'high'
+            description: isMobile 
+                ? 'Op mobiel is elke kilobyte belangrijk. Verwijder ongebruikte CSS regels om de payload te verkleinen en parsing tijd te reduceren. Overweeg critical CSS inline te plaatsen.'
+                : 'Verminder ongebruikte regels uit stylesheets en stel het laden van CSS-inhoud uit totdat deze nodig is om de laadsnelheid te verbeteren.',
+            savings: Math.floor(Math.random() * 1500 + (isMobile ? 1000 : 500)),
+            priority: 'high',
+            relevance: isMobile ? 0.9 : 0.7
         },
         {
             title: 'Gebruik moderne afbeeldingsformaten',
-            description: 'Afbeeldingsformaten zoals WebP en AVIF bieden vaak betere compressie dan PNG of JPEG, wat resulteert in snellere downloads en minder dataverbruik.',
-            savings: Math.floor(Math.random() * 1500 + (isMobile ? 600 : 400)),
-            priority: 'high'
+            description: isMobile
+                ? 'WebP en AVIF besparen tot 40% bandbreedte vergeleken met JPEG/PNG. Essentieel voor mobiele netwerken met hogere latency en lagere bandbreedte.'
+                : 'Afbeeldingsformaten zoals WebP en AVIF bieden vaak betere compressie dan PNG of JPEG, wat resulteert in snellere downloads en minder dataverbruik.',
+            savings: Math.floor(Math.random() * 1200 + (isMobile ? 800 : 400)),
+            priority: 'high',
+            relevance: isMobile ? 0.95 : 0.8
         },
         {
             title: 'Verklein JavaScript',
-            description: 'Door JavaScript-bestanden te verkleinen, kunt u de payload-grootte en de parsertijd verminderen. Dit is vooral belangrijk op mobiele apparaten.',
-            savings: Math.floor(Math.random() * 1200 + (isMobile ? 500 : 300)),
-            priority: 'medium'
+            description: isMobile
+                ? 'Mobiele processors zijn 4-5x langzamer in JavaScript parsing. Verklein JS bundles, gebruik tree-shaking en implementeer code-splitting voor snellere TTI.'
+                : 'Door JavaScript-bestanden te verkleinen, kunt u de payload-grootte en de parsertijd verminderen.',
+            savings: Math.floor(Math.random() * 1000 + (isMobile ? 700 : 300)),
+            priority: isMobile ? 'high' : 'medium',
+            relevance: isMobile ? 0.85 : 0.6
         },
         {
             title: 'Verminder render-blocking resources',
-            description: 'Scripts en stylesheets blokkeren de eerste render van de pagina. Overweeg kritische CSS inline te plaatsen en JavaScript uit te stellen.',
-            savings: Math.floor(Math.random() * 1800 + (isMobile ? 700 : 400)),
-            priority: 'high'
+            description: isMobile
+                ? 'Render-blocking scripts vertragen FCP significant op mobiel. Defer JavaScript en inline kritische CSS om sneller eerste pixels te tonen.'
+                : 'Scripts en stylesheets blokkeren de eerste render van de pagina. Overweeg kritische CSS inline te plaatsen en JavaScript uit te stellen.',
+            savings: Math.floor(Math.random() * 1500 + (isMobile ? 900 : 400)),
+            priority: 'high',
+            relevance: 0.9
         },
         {
             title: 'Gebruik text compressie',
-            description: 'Schakel text compressie (gzip/brotli) in op uw server om de overdracht van text-based resources te versnellen.',
-            savings: Math.floor(Math.random() * 1000 + (isMobile ? 400 : 200)),
-            priority: 'medium'
+            description: isMobile
+                ? 'Brotli compressie kan tot 20% beter presteren dan Gzip. Op mobiele netwerken scheelt dit veel laadtijd.'
+                : 'Schakel text compressie (gzip/brotli) in op uw server om de overdracht van text-based resources te versnellen.',
+            savings: Math.floor(Math.random() * 800 + (isMobile ? 500 : 200)),
+            priority: 'medium',
+            relevance: isMobile ? 0.8 : 0.65
         },
         {
             title: 'Optimaliseer afbeeldingen',
-            description: 'Afbeeldingen zijn vaak de grootste contributors aan paginagewicht. Comprimeer afbeeldingen en gebruik de juiste dimensies.',
-            savings: Math.floor(Math.random() * 2500 + (isMobile ? 1000 : 600)),
-            priority: 'high'
+            description: isMobile
+                ? 'Afbeeldingen zijn vaak 60-70% van de mobile payload. Gebruik srcset voor responsive images, lazy load below-fold afbeeldingen, en comprimeer agressief.'
+                : 'Afbeeldingen zijn vaak de grootste contributors aan paginagewicht. Comprimeer afbeeldingen en gebruik de juiste dimensies.',
+            savings: Math.floor(Math.random() * 2000 + (isMobile ? 1500 : 600)),
+            priority: 'high',
+            relevance: isMobile ? 1.0 : 0.75
         },
         {
             title: 'Implementeer browser caching',
-            description: 'Stel langere cache headers in voor statische resources om herhaalbezoeken te versnellen.',
-            savings: Math.floor(Math.random() * 800 + 300),
-            priority: 'medium'
+            description: isMobile
+                ? 'Mobile browsers hebben kleinere cache maar caching is cruciaal voor terugkerende bezoekers. Stel lange cache headers in (1 jaar) voor statische assets.'
+                : 'Stel langere cache headers in voor statische resources om herhaalbezoeken te versnellen.',
+            savings: Math.floor(Math.random() * 600 + (isMobile ? 400 : 300)),
+            priority: 'medium',
+            relevance: 0.7
         },
         {
             title: 'Verwijder ongebruikte JavaScript',
-            description: 'Reduceer de hoeveelheid JavaScript die niet wordt gebruikt. Dit verbetert de parseer- en executietijd.',
-            savings: Math.floor(Math.random() * 1500 + (isMobile ? 600 : 400)),
-            priority: 'high'
+            description: isMobile
+                ? 'Tree-shaking en code-splitting zijn essentieel op mobiel. Mobiele CPU\'s hebben meer moeite met grote JS bundles. Laad alleen wat nodig is.'
+                : 'Reduceer de hoeveelheid JavaScript die niet wordt gebruikt. Dit verbetert de parseer- en executietijd.',
+            savings: Math.floor(Math.random() * 1200 + (isMobile ? 800 : 400)),
+            priority: 'high',
+            relevance: isMobile ? 0.9 : 0.7
+        },
+        {
+            title: 'Preconnect naar belangrijke origins',
+            description: isMobile
+                ? 'DNS lookup, TCP handshake en TLS negotiation kosten op mobiel 300-600ms per domein. Preconnect naar CDN, analytics en fonts om latency te reduceren.'
+                : 'Gebruik preconnect om vroeg verbinding te maken met belangrijke third-party origins.',
+            savings: Math.floor(Math.random() * 500 + (isMobile ? 400 : 200)),
+            priority: 'medium',
+            relevance: isMobile ? 0.85 : 0.6
+        },
+        {
+            title: 'Reduceer JavaScript execution time',
+            description: isMobile
+                ? 'Mobiele CPU\'s zijn 4-5x langzamer. Break long tasks op (>50ms), gebruik web workers voor zware berekeningen, en defer non-critical code.'
+                : 'Optimaliseer JavaScript execution door taken op te splitsen en expensive operations uit te stellen.',
+            savings: Math.floor(Math.random() * 1000 + (isMobile ? 700 : 300)),
+            priority: isMobile ? 'high' : 'medium',
+            relevance: isMobile ? 0.95 : 0.65
+        },
+        {
+            title: 'Gebruik adaptive loading',
+            description: 'Detecteer netwerk kwaliteit (4G/3G/2G) en apparaat capabilities. Serveer lichtere experiences op langzame verbindingen en low-end devices.',
+            savings: Math.floor(Math.random() * 1500 + 800),
+            priority: 'high',
+            relevance: isMobile ? 1.0 : 0.3
+        },
+        {
+            title: 'Optimaliseer third-party scripts',
+            description: isMobile
+                ? 'Third-party scripts kunnen 50% van de laadtijd veroorzaken op mobiel. Lazy load analytics, defer social widgets, en gebruik facade patterns voor embeds.'
+                : 'Third-party scripts kunnen de laadtijd significant beïnvloeden. Defer of lazy load waar mogelijk.',
+            savings: Math.floor(Math.random() * 1200 + (isMobile ? 800 : 400)),
+            priority: 'high',
+            relevance: isMobile ? 0.9 : 0.7
         }
     ];
     
-    // Selecteer relevante opportunities op basis van score
-    const numOpportunities = score < 50 ? 5 : score < 70 ? 4 : 3;
+    // Selecteer relevante opportunities op basis van device en score
+    const numOpportunities = score < 50 ? 6 : score < 70 ? 5 : 4;
+    
+    // Filter mobiel-specifieke opportunities
+    let opportunities = isMobile 
+        ? allOpportunities 
+        : allOpportunities.filter(opp => opp.relevance <= 0.95 || Math.random() > 0.5);
+    
     return opportunities
-        .sort((a, b) => b.savings - a.savings)
+        .sort((a, b) => {
+            // Sorteer op relevance * savings voor betere prioritering
+            return (b.relevance * b.savings) - (a.relevance * a.savings);
+        })
         .slice(0, numOpportunities);
 }
 
 // Genereer diagnostics voor analyse
 function generateDiagnostics(isMobile, score) {
-    return {
-        networkRequests: Math.floor(Math.random() * 80 + (isMobile ? 60 : 40)),
-        totalByteWeight: Math.floor(Math.random() * 3000 + (isMobile ? 2000 : 1500)),
-        domSize: Math.floor(Math.random() * 1000 + 800),
-        jsSize: Math.floor(Math.random() * 800 + (isMobile ? 500 : 300)),
-        cssSize: Math.floor(Math.random() * 200 + 100),
-        imageSize: Math.floor(Math.random() * 1500 + (isMobile ? 1000 : 600)),
-        thirdPartySize: Math.floor(Math.random() * 500 + 200),
-        mainThreadWork: Math.floor(Math.random() * 5000 + (isMobile ? 3000 : 2000))
-    };
+    if (isMobile) {
+        return {
+            networkRequests: Math.floor(Math.random() * 60 + 80),      // Meer requests
+            totalByteWeight: Math.floor(Math.random() * 2000 + 2500),  // Groter
+            domSize: Math.floor(Math.random() * 800 + 1000),           // Groter
+            jsSize: Math.floor(Math.random() * 600 + 600),             // Groter
+            cssSize: Math.floor(Math.random() * 150 + 150),
+            imageSize: Math.floor(Math.random() * 1200 + 1200),        // Groter
+            thirdPartySize: Math.floor(Math.random() * 400 + 400),     // Groter
+            mainThreadWork: Math.floor(Math.random() * 4000 + 4000)    // Meer werk
+        };
+    } else {
+        return {
+            networkRequests: Math.floor(Math.random() * 40 + 50),      // Minder requests
+            totalByteWeight: Math.floor(Math.random() * 1500 + 1500),  // Kleiner
+            domSize: Math.floor(Math.random() * 600 + 700),            // Kleiner
+            jsSize: Math.floor(Math.random() * 400 + 400),             // Kleiner
+            cssSize: Math.floor(Math.random() * 100 + 100),
+            imageSize: Math.floor(Math.random() * 800 + 800),          // Kleiner
+            thirdPartySize: Math.floor(Math.random() * 300 + 250),     // Kleiner
+            mainThreadWork: Math.floor(Math.random() * 2500 + 2000)    // Minder werk
+        };
+    }
 }
 
 // Display Results
@@ -347,14 +487,24 @@ function displayAnalysis(result) {
     
     let analysis = [];
     
-    // Overall summary
+    // Overall summary - DEVICE SPECIFIC
     let summaryText = '';
-    if (score >= 90) {
-        summaryText = `Uitstekende prestaties! Deze website scoort ${score}/100 op ${isMobile ? 'mobiel' : 'desktop'}. De pagina laadt snel en biedt een goede gebruikerservaring.`;
-    } else if (score >= 50) {
-        summaryText = `Matige prestaties. Deze website scoort ${score}/100 op ${isMobile ? 'mobiel' : 'desktop'}. Er zijn verschillende verbetermogelijkheden die de laadtijd significant kunnen verbeteren.`;
+    if (isMobile) {
+        if (score >= 90) {
+            summaryText = `Uitstekende mobiele prestaties! Deze website scoort ${score}/100 op mobiel. Ondanks de beperkingen van mobiele apparaten (langzamere CPU, beperkt geheugen, vaak 4G/3G netwerk) laadt de pagina snel en biedt een goede gebruikerservaring.`;
+        } else if (score >= 50) {
+            summaryText = `Matige mobiele prestaties. Deze website scoort ${score}/100 op mobiel. Mobiele gebruikers ervaren waarschijnlijk langere laadtijden. Mobiel is inherent langzamer (30-50%) door beperktere hardware en netwerkverbinding. Er zijn echter concrete verbetermogelijkheden die de mobiele ervaring significant kunnen verbeteren.`;
+        } else {
+            summaryText = `Mobiele prestaties hebben urgente aandacht nodig. Deze website scoort slechts ${score}/100 op mobiel. Mobiele gebruikers met 4G/3G ervaren zeer trage laadtijden, wat leidt tot hoge bounce rates. Mobiele apparaten hebben 4-5x langzamere CPU's en vaak slechtere netwerken - deze site is daar niet voor geoptimaliseerd.`;
+        }
     } else {
-        summaryText = `Prestaties hebben aandacht nodig. Deze website scoort slechts ${score}/100 op ${isMobile ? 'mobiel' : 'desktop'}. Gebruikers ervaren waarschijnlijk trage laadtijden, wat kan leiden tot hogere bounce rates.`;
+        if (score >= 90) {
+            summaryText = `Uitstekende desktop prestaties! Deze website scoort ${score}/100 op desktop. De pagina laadt snel en biedt een goede gebruikerservaring voor desktop bezoekers met snelle processors en breedbandverbindingen.`;
+        } else if (score >= 50) {
+            summaryText = `Matige desktop prestaties. Deze website scoort ${score}/100 op desktop. Zelfs met krachtige desktop hardware en snelle internetverbindingen zijn er vertragingen. Er zijn verschillende verbetermogelijkheden die de laadtijd significant kunnen verbeteren.`;
+        } else {
+            summaryText = `Desktop prestaties hebben aandacht nodig. Deze website scoort slechts ${score}/100 op desktop. Ook gebruikers met snelle computers en breedbandverbindingen ervaren trage laadtijden. Dit wijst op fundamentele optimalisatieproblemen.`;
+        }
     }
     
     analysis.push({
@@ -362,129 +512,191 @@ function displayAnalysis(result) {
         content: summaryText
     });
     
-    // FCP Analysis
+    // Device context - alleen tonen als relevant
+    if (isMobile) {
+        analysis.push({
+            type: 'neutral',
+            title: '📱 Mobiele Context',
+            content: `Mobiele apparaten hebben typisch: 1) CPU die 4-5x langzamer is dan desktop, 2) Beperkt werkgeheugen (2-4GB vs 8-32GB), 3) Variabele netwerksnelheid (4G ~20-50ms latency, 3G ~100-300ms), 4) Kleinere cache. Dit maakt optimalisatie cruciaal voor een goede mobiele ervaring.`
+        });
+    }
+    
+    // FCP Analysis - DEVICE SPECIFIC
     const fcpValue = metrics.fcp.numericValue / 1000;
-    if (fcpValue > 3.0) {
+    const fcpThresholds = isMobile ? { good: 1.8, poor: 3.0 } : { good: 1.0, poor: 1.8 };
+    
+    if (fcpValue > fcpThresholds.poor) {
         analysis.push({
             type: 'negative',
             title: 'First Contentful Paint te traag',
-            content: `De eerste content verschijnt pas na ${fcpValue.toFixed(1)}s. Gebruikers zien ${isMobile ? 'op hun mobiel' : ''} te lang een wit scherm. Optimaliseer server responstijd, verklein CSS en gebruik resource hints.`
+            content: isMobile 
+                ? `De eerste content verschijnt pas na ${fcpValue.toFixed(1)}s op mobiel. Dit is te traag - gebruikers zien te lang een wit scherm. Mobiele 4G heeft ~50ms latency per request. Reduceer server response tijd (<600ms), inline kritische CSS (<14KB), gebruik resource hints (preconnect, dns-prefetch), en optimaliseer je mobile-first CSS.`
+                : `Content verschijnt pas na ${fcpValue.toFixed(1)}s. Dit is te traag voor desktop bezoekers. Optimaliseer server responstijd, verklein CSS bundles, gebruik resource hints (preconnect), en overweeg HTTP/2 server push voor kritische resources.`
         });
-    } else if (fcpValue > 1.8) {
+    } else if (fcpValue > fcpThresholds.good) {
         analysis.push({
             type: 'neutral',
             title: 'First Contentful Paint kan beter',
-            content: `Content verschijnt na ${fcpValue.toFixed(1)}s. Dit is acceptabel maar kan sneller. Overweeg server-side rendering of optimaliseer kritische render path.`
+            content: isMobile
+                ? `Content verschijnt na ${fcpValue.toFixed(1)}s op mobiel. Dit is acceptabel maar kan sneller. Mobiele gebruikers waarderen snelle feedback. Inline critical CSS, defer non-critical CSS, en zorg voor snelle server response (<800ms).`
+                : `Content verschijnt na ${fcpValue.toFixed(1)}s op desktop. Dit is acceptabel maar kan sneller. Server-side rendering of static generation kan helpen, evenals kritische CSS optimalisatie.`
         });
     } else {
         analysis.push({
             type: 'positive',
             title: 'Snelle First Contentful Paint',
-            content: `Content verschijnt al na ${fcpValue.toFixed(1)}s. Dit geeft gebruikers snel visuele feedback en verbetert de ervaren snelheid.`
+            content: isMobile
+                ? `Content verschijnt al na ${fcpValue.toFixed(1)}s op mobiel - uitstekend! Dit geeft mobiele gebruikers snel visuele feedback ondanks netwerk latency en device beperkingen.`
+                : `Content verschijnt al na ${fcpValue.toFixed(1)}s op desktop. Dit geeft gebruikers snel visuele feedback en verbetert de ervaren snelheid.`
         });
     }
     
-    // LCP Analysis
+    // LCP Analysis - DEVICE SPECIFIC
     const lcpValue = metrics.lcp.numericValue / 1000;
-    if (lcpValue > 4.0) {
+    const lcpThresholds = isMobile ? { good: 2.5, poor: 4.0 } : { good: 2.0, poor: 3.0 };
+    
+    if (lcpValue > lcpThresholds.poor) {
         analysis.push({
             type: 'negative',
             title: 'Largest Contentful Paint kritiek',
-            content: `De grootste content laadt pas na ${lcpValue.toFixed(1)}s. Dit is te traag${isMobile ? ' voor mobiele gebruikers' : ''}. Optimaliseer afbeeldingen, gebruik lazy loading en implementeer een CDN.`
+            content: isMobile
+                ? `De grootste content laadt pas na ${lcpValue.toFixed(1)}s op mobiel. Dit is kritiek traag. Mobiele netwerken hebben beperkte bandbreedte (~5-20 Mbps op 4G). Prioriteiten: 1) Comprimeer/optimaliseer de hero image (WebP/AVIF, <200KB), 2) Gebruik responsive images (srcset), 3) Implementeer lazy loading voor below-fold content, 4) Preload kritische resources, 5) Overweeg een CDN voor snellere delivery.`
+                : `De grootste content laadt pas na ${lcpValue.toFixed(1)}s op desktop. Dit is te traag. Optimaliseer grote afbeeldingen (WebP/AVIF), gebruik een CDN, implementeer preloading voor hero images, en overweeg server-side rendering voor above-fold content.`
         });
-    } else if (lcpValue > 2.5) {
+    } else if (lcpValue > lcpThresholds.good) {
         analysis.push({
             type: 'neutral',
             title: 'Largest Contentful Paint verbeteren',
-            content: `Belangrijke content laadt na ${lcpValue.toFixed(1)}s. Comprimeer grote afbeeldingen en overweeg preloading voor kritische resources.`
+            content: isMobile
+                ? `Belangrijke content laadt na ${lcpValue.toFixed(1)}s op mobiel. Dit kan beter voor mobiele gebruikers. Comprimeer hero images agressief (aim for <150KB), gebruik modern image formats (WebP/AVIF), implementeer adaptive loading op basis van netwerk kwaliteit.`
+                : `Belangrijke content laadt na ${lcpValue.toFixed(1)}s. Comprimeer grote afbeeldingen, gebruik modern formats, en overweeg preloading voor kritische resources.`
         });
     } else {
         analysis.push({
             type: 'positive',
             title: 'Goede Largest Contentful Paint',
-            content: `De belangrijkste content laadt binnen ${lcpValue.toFixed(1)}s. Dit zorgt voor een snelle ervaring.`
+            content: isMobile
+                ? `De belangrijkste content laadt binnen ${lcpValue.toFixed(1)}s op mobiel. Dit is uitstekend voor mobiele apparaten en netwerken!`
+                : `De belangrijkste content laadt binnen ${lcpValue.toFixed(1)}s. Dit zorgt voor een snelle desktop ervaring.`
         });
     }
     
-    // CLS Analysis
+    // CLS Analysis - DEVICE SPECIFIC
     const clsValue = metrics.cls.numericValue;
-    if (clsValue > 0.25) {
+    const clsThresholds = { good: 0.1, poor: 0.25 };
+    
+    if (clsValue > clsThresholds.poor) {
         analysis.push({
             type: 'negative',
             title: 'Layout shift probleem',
-            content: `Hoge layout shift score (${clsValue.toFixed(3)}). Content verschuift tijdens het laden, wat frustrerend is${isMobile ? ' op mobiel' : ''}. Reserveer ruimte voor afbeeldingen en ads, en gebruik font-display: swap.`
+            content: isMobile
+                ? `Hoge layout shift score (${clsValue.toFixed(3)}) op mobiel. Content verschuift tijdens het laden, wat zeer frustrerend is op kleine schermen. Mobiele gebruikers moeten nauwkeuriger tikken en shifts zijn meer opvallend. Fixes: 1) Reserveer ruimte voor afbeeldingen (aspect-ratio CSS), 2) Definieer dimensies voor ads/embeds, 3) Gebruik font-display: optional, 4) Avoid inserting content above existing content.`
+                : `Hoge layout shift score (${clsValue.toFixed(3)}). Content verschuift tijdens het laden, wat frustrerend is. Reserveer ruimte voor afbeeldingen en embedded content, gebruik font-display: swap met fallbacks, en vermijd dynamische content insertion above-fold.`
         });
-    } else if (clsValue > 0.1) {
+    } else if (clsValue > clsThresholds.good) {
         analysis.push({
             type: 'neutral',
             title: 'Layout shift verbeteren',
-            content: `Layout shift score is ${clsValue.toFixed(3)}. Dit kan beter. Definieer expliciete afmetingen voor afbeeldingen en embedded content.`
+            content: isMobile
+                ? `Layout shift score is ${clsValue.toFixed(3)} op mobiel. Dit kan beter. Definieer expliciete width/height voor alle afbeeldingen, gebruik CSS aspect-ratio, en load fonts optimaal (font-display: swap met system font fallback).`
+                : `Layout shift score is ${clsValue.toFixed(3)}. Dit kan beter. Definieer expliciete afmetingen voor afbeeldingen en embedded content.`
         });
     } else {
         analysis.push({
             type: 'positive',
             title: 'Stabiele layout',
-            content: `Uitstekende layout shift score (${clsValue.toFixed(3)}). De pagina blijft visueel stabiel tijdens het laden.`
+            content: isMobile
+                ? `Uitstekende layout shift score (${clsValue.toFixed(3)}) op mobiel. De pagina blijft visueel stabiel, zelfs tijdens progressieve loading op trage mobiele netwerken.`
+                : `Uitstekende layout shift score (${clsValue.toFixed(3)}). De pagina blijft visueel stabiel tijdens het laden.`
         });
     }
     
-    // TTI Analysis
+    // TTI Analysis - DEVICE SPECIFIC
     const ttiValue = metrics.tti.numericValue / 1000;
-    if (ttiValue > 7.3) {
+    const ttiThresholds = isMobile ? { good: 3.8, poor: 7.3 } : { good: 2.5, poor: 5.0 };
+    
+    if (ttiValue > ttiThresholds.poor) {
         analysis.push({
             type: 'negative',
             title: 'Time to Interactive te lang',
-            content: `De pagina is pas na ${ttiValue.toFixed(1)}s interactief. ${isMobile ? 'Mobiele processors hebben moeite met' : 'Gebruikers moeten lang wachten op'} JavaScript verwerking. Splits code, gebruik code-splitting en reduceer third-party scripts.`
+            content: isMobile
+                ? `De pagina is pas na ${ttiValue.toFixed(1)}s interactief op mobiel. Dit is veel te lang! Mobiele CPU's (ARM) zijn 4-5x langzamer in JavaScript parsing en execution. Kritieke fixes: 1) Code-split aggressief (<100KB initial JS), 2) Defer all non-critical JS, 3) Gebruik web workers voor heavy computation, 4) Reduceer third-party scripts (ze blokkeren main thread), 5) Implement progressive hydration, 6) Gebruik modern bundlers (Vite/esbuild) voor betere tree-shaking.`
+                : `De pagina is pas na ${ttiValue.toFixed(1)}s interactief. Gebruikers moeten te lang wachten. Splits code, gebruik code-splitting en lazy loading, reduceer third-party scripts, en optimaliseer JavaScript execution met async/defer.`
         });
-    } else if (ttiValue > 3.8) {
+    } else if (ttiValue > ttiThresholds.good) {
         analysis.push({
             type: 'neutral',
             title: 'Time to Interactive verbeteren',
-            content: `Pagina wordt interactief na ${ttiValue.toFixed(1)}s. Reduceer JavaScript payload en optimaliseer main thread werk.`
+            content: isMobile
+                ? `Pagina wordt interactief na ${ttiValue.toFixed(1)}s op mobiel. Dit is acceptabel maar kan beter. Reduceer JavaScript payload (aim for <150KB gzipped initial bundle), defer non-critical scripts, use dynamic imports, implementeer service worker voor caching.`
+                : `Pagina wordt interactief na ${ttiValue.toFixed(1)}s. Reduceer JavaScript payload en optimaliseer main thread werk met code splitting en async loading.`
         });
     }
     
-    // TBT Analysis  
+    // TBT Analysis - DEVICE SPECIFIC
     const tbtValue = metrics.tbt.numericValue;
-    if (tbtValue > 600) {
+    const tbtThresholds = isMobile ? { good: 200, poor: 600 } : { good: 150, poor: 400 };
+    
+    if (tbtValue > tbtThresholds.poor) {
         analysis.push({
             type: 'negative',
             title: 'Veel blocking tijd',
-            content: `${tbtValue.toFixed(0)}ms blocking time${isMobile ? ' op mobiel' : ''}. Lange JavaScript taken blokkeren gebruikersinteractie. Break up long tasks en gebruik web workers waar mogelijk.`
+            content: isMobile
+                ? `${tbtValue.toFixed(0)}ms blocking time op mobiel. Dit is veel te hoog! Lange JavaScript taken (>50ms) blokkeren user input volledig op mobiele single-core rendering. Users ervaren jank en frozen UI. Break long tasks: 1) Split werk in chunks van <50ms, 2) Gebruik requestIdleCallback voor non-critical werk, 3) Implement progressive rendering, 4) Defer heavy JS tot after first interaction, 5) Profile met Chrome DevTools Mobile Throttling.`
+                : `${tbtValue.toFixed(0)}ms blocking time. Lange JavaScript taken blokkeren gebruikersinteractie. Break up long tasks (>50ms), gebruik web workers waar mogelijk, en optimaliseer JavaScript execution efficiency.`
         });
-    } else if (tbtValue > 200) {
+    } else if (tbtValue > tbtThresholds.good) {
         analysis.push({
             type: 'neutral',
             title: 'Blocking tijd reduceren',
-            content: `${tbtValue.toFixed(0)}ms blocking time. Optimaliseer JavaScript execution en verklein synchrone scripts.`
+            content: isMobile
+                ? `${tbtValue.toFixed(0)}ms blocking time op mobiel. Dit kan beter. Optimaliseer JavaScript execution: split long tasks, use async/await appropriately, defer analytics en non-critical scripts.`
+                : `${tbtValue.toFixed(0)}ms blocking time. Optimaliseer JavaScript execution en verklein synchrone scripts.`
         });
     }
     
-    // Device-specific analysis
-    if (isMobile) {
-        analysis.push({
-            type: 'neutral',
-            title: 'Mobiele prestaties',
-            content: `Op mobiel zijn prestaties meestal 30-50% langzamer dan desktop door beperktere CPU, geheugen en netwerkverbinding. Optimaliseer specifiek voor mobiel met adaptive loading en reduced motion.`
-        });
-    }
-    
-    // Resource analysis
+    // Resource analysis - DEVICE SPECIFIC
     if (diagnostics.totalByteWeight) {
         const sizeMB = (diagnostics.totalByteWeight / 1024).toFixed(1);
-        if (diagnostics.totalByteWeight > 3000) {
+        const sizeThresholds = isMobile ? { good: 2000, poor: 3500 } : { good: 2500, poor: 4000 };
+        
+        if (diagnostics.totalByteWeight > sizeThresholds.poor) {
             analysis.push({
                 type: 'negative',
                 title: 'Pagina te groot',
-                content: `Totale paginagrootte is ${sizeMB} MB. Dit is te groot${isMobile ? ', vooral op mobiele netwerken' : ''}. Comprimeer resources, lazy load content en optimaliseer afbeeldingen.`
+                content: isMobile
+                    ? `Totale paginagrootte is ${sizeMB} MB op mobiel. Dit is veel te groot! Mobiele data is duur en netwerken zijn langzamer. Op 4G (20 Mbps) duurt ${sizeMB}MB ~${((sizeMB * 8) / 20).toFixed(1)}s alleen voor download (zonder processing!). Op 3G (1-3 Mbps) kan dit minuten duren. Targets: 1) Initial bundle <500KB, 2) Total page <1.5MB, 3) Gebruik lazy loading aggressief, 4) Implement adaptive loading (serve less on slow networks).`
+                    : `Totale paginagrootte is ${sizeMB} MB. Dit is te groot, zelfs voor desktop. Comprimeer resources aggressief, lazy load content, optimaliseer afbeeldingen, en implementeer code splitting.`
             });
-        } else if (diagnostics.totalByteWeight > 2000) {
+        } else if (diagnostics.totalByteWeight > sizeThresholds.good) {
             analysis.push({
                 type: 'neutral',
                 title: 'Paginagrootte optimaliseren',
-                content: `Totale paginagrootte is ${sizeMB} MB. Dit kan kleiner voor snellere laadtijden.`
+                content: isMobile
+                    ? `Totale paginagrootte is ${sizeMB} MB op mobiel. Dit kan kleiner voor betere mobile experience. Target <1.5MB total. Comprimeer images (WebP/AVIF), minify JS/CSS, enable Brotli compression, lazy load below-fold content.`
+                    : `Totale paginagrootte is ${sizeMB} MB. Dit kan kleiner voor snellere laadtijden. Comprimeer resources en gebruik lazy loading.`
             });
         }
+    }
+    
+    // Network requests - DEVICE SPECIFIC
+    if (diagnostics.networkRequests > (isMobile ? 100 : 120)) {
+        analysis.push({
+            type: 'negative',
+            title: 'Te veel network requests',
+            content: isMobile
+                ? `${diagnostics.networkRequests} network requests op mobiel is excessief! Elke request heeft ~50-100ms overhead op 4G door latency. ${diagnostics.networkRequests} requests = ~${((diagnostics.networkRequests * 75) / 1000).toFixed(1)}s alleen aan latency! Reduceer: 1) Bundle CSS/JS (<10 requests), 2) Use CSS sprites/SVG sprites, 3) Inline kritische resources (<14KB), 4) Implement HTTP/2 (multiplexing), 5) Use service worker voor aggressive caching, 6) Remove/defer third-party scripts.`
+                : `${diagnostics.networkRequests} network requests is te veel. Elke request heeft overhead. Bundle resources, gebruik sprites, implementeer HTTP/2, en reduceer third-party dependencies.`
+        });
+    }
+    
+    // Comparison note - alleen op mobiel
+    if (isMobile && score < 70) {
+        analysis.push({
+            type: 'neutral',
+            title: '📊 Mobiel vs Desktop Vergelijking',
+            content: `Let op: Desktop scores zijn typisch 20-30 punten hoger dan mobiel voor dezelfde website. Als deze site ${score} scoort op mobiel, verwacht ~${Math.min(100, score + 25)} op desktop. De mobiele score is het belangrijkst - 60% van web traffic is mobiel. Focus op mobile-first optimalisatie.`
+        });
     }
     
     // Render HTML
