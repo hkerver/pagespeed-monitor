@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installatie Instructies - PageSpeed Analyzer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+            color: white;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 24px;
+            margin: 0 auto 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .logo svg {
+            width: 70px;
+            height: 70px;
+            fill: #1a73e8;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            color: #202124;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        
+        .step {
+            margin-bottom: 2rem;
+        }
+        
+        .step:last-child {
+            margin-bottom: 0;
+        }
+        
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: #1a73e8;
+            color: white;
+            border-radius: 50%;
+            font-weight: bold;
+            margin-right: 1rem;
+            flex-shrink: 0;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .step-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .step-content {
+            padding-left: 3rem;
+        }
+        
+        .step-description {
+            color: #5f6368;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        
+        .icon-demo {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .icon-demo svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .icon-label {
+            font-size: 0.875rem;
+            color: #5f6368;
+        }
+        
+        .cta-button {
+            display: block;
+            width: 100%;
+            background: white;
+            color: #1a73e8;
+            border: none;
+            padding: 1.25rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        
+        .cta-button:active {
+            transform: scale(0.98);
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffa400;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+        }
+        
+        .warning-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+        
+        .warning-text {
+            color: #856404;
+            font-size: 0.9rem;
+        }
+        
+        .platform-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .platform-btn {
+            flex: 1;
+            padding: 1rem;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .platform-btn.active {
+            background: white;
+            color: #1a73e8;
+            border-color: white;
+        }
+        
+        .platform-content {
+            display: none;
+        }
+        
+        .platform-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <h1>PageSpeed Analyzer</h1>
+            <p class="subtitle">Installeer op je iPhone zonder App Store</p>
+        </div>
+        
+        <div class="platform-selector">
+            <button class="platform-btn active" onclick="showPlatform('ios')">📱 iPhone</button>
+            <button class="platform-btn" onclick="showPlatform('android')">🤖 Android</button>
+        </div>
+        
+        <!-- iOS Instructions -->
+        <div id="ios-content" class="platform-content active">
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3 class="step-title">Open in Safari</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Zorg dat je deze pagina opent in Safari (niet Chrome of Firefox). 
+                            Safari is de standaard browser op iPhone.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3 class="step-title">Tik op het deel-icoon</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Tik op het <strong>deel-icoon</strong> onderaan het scherm. 
+                            Dit is het vierkant met de pijl die omhoog wijst.
+                        </p>
+                        <div class="icon-demo">
+                            <svg fill="#1a73e8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+                            </svg>
+                            <p class="icon-label">Deel-icoon</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h3 class="step-title">Kies "Zet op beginscherm"</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Scroll in het menu naar beneden en tik op <strong>"Zet op beginscherm"</strong> 
+                            (of "Add to Home Screen" in het Engels).
+                        </p>
+                        <div class="icon-demo">
+                            <svg fill="#1a73e8" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                            </svg>
+                            <p class="icon-label">Plus-icoon met vierkant</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <h3 class="step-title">Bevestig installatie</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Geef de app een naam (bijv. "PageSpeed") en tik op <strong>"Voeg toe"</strong>. 
+                            De app verschijnt nu op je beginscherm!
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">5</span>
+                        <h3 class="step-title">Open de app</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Ga naar je beginscherm en tik op het PageSpeed icoon. 
+                            De app opent nu als een volledige app zonder browser interface!
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="warning">
+                <div class="warning-title">⚠️ Belangrijk</div>
+                <p class="warning-text">
+                    Deze methode werkt alleen in Safari op iOS 11.3 of nieuwer. 
+                    Als je Chrome, Firefox of een andere browser gebruikt, open dan eerst Safari.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Android Instructions -->
+        <div id="android-content" class="platform-content">
+            <div class="card">
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3 class="step-title">Open in Chrome</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Open deze pagina in Chrome (aanbevolen) of Firefox voor de beste ervaring.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3 class="step-title">Tik op het menu</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Tik op de drie puntjes (⋮) rechtsboven in de browser.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h3 class="step-title">Kies "Toevoegen aan startscherm"</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Selecteer <strong>"Toevoegen aan startscherm"</strong> of 
+                            <strong>"Installeren"</strong> in het menu.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <h3 class="step-title">Bevestig installatie</h3>
+                    </div>
+                    <div class="step-content">
+                        <p class="step-description">
+                            Tik op <strong>"Toevoegen"</strong> of <strong>"Installeren"</strong>. 
+                            De app verschijnt op je startscherm!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <a href="index.html" class="cta-button">
+            🚀 Open PageSpeed Analyzer
+        </a>
+    </div>
+    
+    <script>
+        function showPlatform(platform) {
+            // Update buttons
+            document.querySelectorAll('.platform-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.platform-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(platform + '-content').classList.add('active');
+        }
+    </script>
+</body>
+</html>
